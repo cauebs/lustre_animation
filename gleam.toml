@@ -1,0 +1,4 @@
+name = "lustre_animation"
+target = "javascript"
+dependencies = { lustre = "~> 2.0" , birl = "~> 0.6"}
+dev-dependencies = { gleeunit = "~> 0.10"}

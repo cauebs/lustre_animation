@@ -1,4 +1,8 @@
 name = "lustre_animation"
+version = "0.2.0"
+description = "Animations for lustre, utilizing JS requestAnimationFrame"
 target = "javascript"
-dependencies = { lustre = "~> 2.0" , birl = "~> 0.6"}
-dev-dependencies = { gleeunit = "~> 0.10"}
+licenses = ["MIT"]
+repository = { type = "custom", url = "https://git.chmeee.org/lustre_animation" }
+dependencies = { lustre = "~> 2.0" }
+dev-dependencies = { gleeunit = "~> 0.10" }

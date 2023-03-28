@@ -1,11 +1,12 @@
 import lustre/cmd.{Cmd}
 import gleam/list.{filter, find, map}
 
+/// A singleton holding all your animations, and a timestamp
 pub opaque type Animations {
   Animations(t: Float, List(Animation))
 }
 
-pub opaque type Animation {
+type Animation {
   Animation(name: String, range: #(Float, Float), state: AnimationState)
 }
 
@@ -15,7 +16,7 @@ pub opaque type Animation {
 //   Cancelled(Animation)
 
 // The State Done will guarantee the `stop` value is returned, before the Animation is removed from the list
-pub opaque type AnimationState {
+type AnimationState {
   NotStarted(seconds: Float)
   Running(seconds: Float, since: Float)
   Done
@@ -25,11 +26,24 @@ pub fn new() {
   Animations(0.0, [])
 }
 
-pub fn add(animations: Animations, name, start, stop, seconds) -> Animations {
+/// Add an animation (linear interpolation) from `start` to `stop`, for `seconds` duration.
+/// The `name` should be unique, so the animation can be retrieved and evaluated by `value()` later.
+/// The animation is started when a subsequent command from `cmd()` is returned by your
+/// lustre `update()` function; followed by a call to `tick()`.
+pub fn add(
+  animations: Animations,
+  name,
+  start: Float,
+  stop: Float,
+  seconds: Float,
+) -> Animations {
   use list <- change_list(animations)
   [Animation(name, #(start, stop), NotStarted(seconds)), ..list]
 }
 
+/// Remove an animation if it should stop before it is finished.
+/// If an animation runs to its end normally, you do not have to `remove()` it manually,
+/// will be automatically removed by `tick()`.
 pub fn remove(animations: Animations, name) -> Animations {
   use list <- change_list(animations)
   filter(list, does_not_have_name(_, name))
@@ -49,6 +63,16 @@ fn does_not_have_name(animation: Animation, name: String) {
   n != name
 }
 
+/// When called for the first time on an animation, its start time is
+/// set to time-Offset. Its stop time then is the start time plus the
+/// duration.
+///
+/// When called for the *first* time for animations that have finished,
+/// they will be marked as such in the result. `value()` will return the `stop` value
+/// that you passed with `add()`
+///
+/// When called the *second* time for animations that have finished, they will be absent
+/// from the returned value.
 pub fn tick(animations: Animations, time_offset) -> Animations {
   let assert Animations(_, list) = animations
   let new_list =
@@ -79,13 +103,18 @@ fn tick_animation(animation: Animation, time: Float) -> Animation {
   Animation(name, range, new_state)
 }
 
+/// Returns `cmd.none()` if none of the animations is running.
+/// Otherwise returns an opaque `Cmd` that will cause `msg(time)` to
+/// be dispatched on a JavaScript `requestAnimationFrame`
 pub fn cmd(animations: Animations, msg: fn(Float) -> m) -> Cmd(m) {
   case animations {
     Animations(_, []) -> cmd.none()
-    _ -> next_frame(msg)
+    _ -> request_animation_frame(msg)
   }
 }
 
+/// If the animation specified by `which` is not found, returns `default`.
+/// Otherwise, the interpolated value for the `time` passed to `tick()` is returned.
 pub fn value(animations: Animations, which: String, default: Float) -> Float {
   let assert Animations(t, list) = animations
   case find(list, has_name(_, which)) {
@@ -112,9 +141,9 @@ fn evaluate(animation: Animation, time: Float) -> Float {
   }
 }
 
-fn next_frame(msg: fn(Float) -> m) -> Cmd(m) {
+pub fn request_animation_frame(msg: fn(Float) -> m) -> Cmd(m) {
   cmd.from(fn(dispatch) {
-    request_animation_frame(fn(time_offset: Float) {
+    js_request_animation_frame(fn(time_offset: Float) {
       dispatch(msg(time_offset))
     })
     Nil
@@ -127,8 +156,8 @@ pub external type RequestedFrame
 // TODO Push the 'long' down into JS land, with the Animation, so we can
 // make a mapping from Animation to RequestFrame and a `cancelFrame(Animation, msg) -> Cmd(m)`
 // that (again in JS land) *can* cancel the appropriate request frame.
-pub external fn request_animation_frame(f) -> RequestedFrame =
-  "" "requestAnimationFrame"
+external fn js_request_animation_frame(f) -> RequestedFrame =
+  "../ffi.mjs" "request_animation_frame"
 
 pub external fn cancel_animation_frame(frame: RequestedFrame) -> Nil =
-  "" "cancelAnimationFrame"
+  "../ffi.mjs" "cancel_animation_frame"

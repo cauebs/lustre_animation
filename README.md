@@ -5,7 +5,7 @@ The basic usage is
  * add animations by some trigger
  * call `animation.cmd()` on your value and let your lustre `update()` return it.
    This will cause a dispatch on the next JS animation frame, unless all animations have finished (and auto-removed)
- * update your value
+ * update the animations with the new time.
  * evaluate for each animation you are interested in.
 
 e.g. like this:
@@ -34,17 +34,15 @@ pub fn update(model: Model, msg: Msg) {
 ```
 
 In the above `type Model`, `init` and `render` have been omitted.
+
 There are fully functional examples animations in the `test/` directory,
 which you can build by
-
 ```bash
 gleam test
-npx webpack build ./test/example_XYZ.mjs --mode=development
+npx vite
 ````
 
-and then pointing your browser to `./dist/index.html`
-
-Rerun webpack with another example and reload.
+and then pointing your browser to the URL that vite indicates.
 
 ## TODO
 * `every(Minute)`, etc

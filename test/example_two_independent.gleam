@@ -2,7 +2,7 @@ import lustre
 import lustre/animation.{Animations}
 import lustre/attribute.{style}
 import lustre/cmd.{Cmd}
-import lustre/element.{button, div, span, text}
+import lustre/element.{button, div, h3, span, text}
 import lustre/event.{on_click}
 import gleam/float
 
@@ -63,12 +63,18 @@ pub fn render(model: Model) {
   let sp = span([], [])
   let to_s = float.to_string
   div(
-    [],
+    [
+      style([
+        #("display", "grid"),
+        #("grid-template-rows", "1fr auto"),
+        #("width", "100%"),
+        #("height", "100%"),
+      ]),
+    ],
     [
       div(
         [
           style([
-            #("height", "50vh"),
             #("display", "grid"),
             #(
               "grid-template-rows",
@@ -80,7 +86,7 @@ pub fn render(model: Model) {
             ),
           ]),
         ],
-        [sp, sp, sp, sp, text("Move me around"), sp, sp, sp, sp],
+        [sp, sp, sp, sp, h3([], [text("Move me around")]), sp, sp, sp, sp],
       ),
       div(
         [],

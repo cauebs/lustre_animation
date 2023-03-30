@@ -1,12 +1,13 @@
 import lustre
 import lustre/animation.{Animations}
-import lustre/attribute.{style}
+import lustre/attribute.{id, style}
 import lustre/cmd.{Cmd}
 import lustre/element.{Element, div, h3, text}
 import lustre/event.{on}
 import gleam/float
 import gleam/int
 import gleam/list.{filter, map}
+import gleam/dynamic.{Dynamic} as d
 
 pub type Msg {
   Click(x: Float, y: Float)
@@ -23,7 +24,7 @@ pub type Model {
 
 pub fn main() {
   lustre.application(#(init(), cmd.none()), update, render)
-  |> lustre.start("#root")
+  |> lustre.start("#drops")
 }
 
 fn init() {
@@ -59,7 +60,8 @@ pub fn render(model: Model) -> Element(Msg) {
   div(
     [
       style([
-        #("height", "100vh"),
+        #("width", "100%"),
+        #("height", "100%"),
         #("display", "grid"),
         #("grid-template-rows", "auto 1fr"),
       ]),
@@ -68,11 +70,17 @@ pub fn render(model: Model) -> Element(Msg) {
       h3([style([#("text-align", "center")])], [text("Click to make drops")]),
       div(
         [
+          id("pond"),
+          style([#("position", "relative")]),
           on(
             "mouseDown",
-            fn(evt, dispatch) {
-              let assert Ok(#(x, y)) = event.mouse_position(evt)
-              dispatch(Click(x, y))
+            fn(event, dispatch) {
+              let assert Ok(x) = d.field("clientX", d.float)(event)
+              let assert Ok(y) = d.field("clientY", d.float)(event)
+              let rect = bounding_client_rect("pond")
+              let assert Ok(top) = d.field("top", d.float)(rect)
+              let assert Ok(left) = d.field("left", d.float)(rect)
+              dispatch(Click(x -. left, y -. top))
             },
           ),
         ],
@@ -86,23 +94,24 @@ fn render_drop(drop: Drop) {
   let r = drop.r *. 50.0
   let rad = float.to_string(r *. 2.0)
   let rw = float.to_string(drop.r *. 2.5)
-  let c =
-    drop.r *. 15.0
-    |> float.round
-    |> int.to_base16()
-  let color = "#" <> c <> c <> c
+  let alpha =
+    1.0 -. drop.r
+    |> float.to_string
   div(
     [
       style([
-        #("position", "absolute "),
+        #("position", "absolute"),
         #("left", float.to_string(drop.x -. r) <> "px"),
         #("top", float.to_string(drop.y -. r) <> "px"),
         #("width", rad <> "px"),
         #("height", rad <> "px"),
-        #("border", rw <> "px solid " <> color),
+        #("border", rw <> "px solid rgba(0, 0, 0, " <> alpha <> ")"),
         #("border-radius", "50%"),
       ]),
     ],
     [],
   )
 }
+
+external fn bounding_client_rect(String) -> Dynamic =
+  "./info.mjs" "bounding_client_rect"

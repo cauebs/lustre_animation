@@ -150,14 +150,14 @@ pub fn request_animation_frame(msg: fn(Float) -> m) -> Cmd(m) {
   })
 }
 
-pub external type RequestedFrame
+pub type RequestedFrame
 
 // The returned 'long' can be passed to 'cancelAnimationFrame' - except we do not have any means to
 // TODO Push the 'long' down into JS land, with the Animation, so we can
 // make a mapping from Animation to RequestFrame and a `cancelFrame(Animation, msg) -> Cmd(m)`
 // that (again in JS land) *can* cancel the appropriate request frame.
-external fn js_request_animation_frame(f) -> RequestedFrame =
-  "../ffi.mjs" "request_animation_frame"
+@external(javascript, "../ffi.mjs", "request_animation_frame")
+fn js_request_animation_frame(f: fn(Float) -> m) -> RequestedFrame
 
-pub external fn cancel_animation_frame(frame: RequestedFrame) -> Nil =
-  "../ffi.mjs" "cancel_animation_frame"
+@external(javascript, "../ffi.mjs", "cancel_animation_frame")
+fn cancel_animation_frame(frame: RequestedFrame) -> Nil

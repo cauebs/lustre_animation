@@ -113,5 +113,5 @@ fn render_drop(drop: Drop) {
   )
 }
 
-external fn bounding_client_rect(String) -> Dynamic =
-  "./info.mjs" "bounding_client_rect"
+@external(javascript, "./info.mjs", "bounding_client_rect")
+fn bounding_client_rect(str: String) -> Dynamic

@@ -1,8 +1,9 @@
 import lustre
 import lustre/animation.{Animations}
 import lustre/attribute.{style}
-import lustre/cmd.{Cmd}
-import lustre/element.{button, div, h3, span, text}
+import lustre/effect.{Effect}
+import lustre/element.{text}
+import lustre/element/html.{button, div, h3, span}
 import lustre/event.{on_click}
 import gleam/float
 
@@ -19,15 +20,15 @@ pub type Model {
 }
 
 pub fn main() {
-  lustre.application(#(init(), cmd.none()), update, render)
-  |> lustre.start("#root")
+  lustre.application(init, update, render)
+  |> lustre.start("#root", Nil)
 }
 
-fn init() {
-  Model(0.5, 0.5, animation.new())
+fn init(_) {
+  #(Model(0.5, 0.5, animation.new()), effect.none())
 }
 
-pub fn update(model: Model, msg: Msg) -> #(Model, Cmd(Msg)) {
+pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   let m = case msg {
     Left -> {
       let new_animations =
@@ -56,7 +57,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Cmd(Msg)) {
       Model(x: x, y: y, animations: new_animations)
     }
   }
-  #(m, animation.cmd(m.animations, Tick))
+  #(m, animation.effect(m.animations, Tick))
 }
 
 pub fn render(model: Model) {

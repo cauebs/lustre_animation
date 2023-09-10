@@ -1,8 +1,9 @@
 import lustre
 import lustre/animation.{Animations}
 import lustre/attribute.{id, style}
-import lustre/cmd.{Cmd}
-import lustre/element.{Element, div, h3, text}
+import lustre/effect.{Effect}
+import lustre/element.{Element, text}
+import lustre/element/html.{div, h3}
 import lustre/event.{on}
 import gleam/float
 import gleam/int
@@ -23,17 +24,17 @@ pub type Model {
 }
 
 pub fn main() {
-  lustre.application(#(init(), cmd.none()), update, render)
-  |> lustre.start("#drops")
+  lustre.application(init, update, render)
+  |> lustre.start("#drops", Nil)
 }
 
-fn init() {
-  Model(0, [], animation.new())
+fn init(_) {
+  #(Model(0, [], animation.new()), effect.none())
 }
 
 const to_s = int.to_string
 
-pub fn update(model: Model, msg: Msg) -> #(Model, Cmd(Msg)) {
+pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   let m = case msg {
     Click(x, y) -> {
       let id = "drop" <> to_s(model.counter)
@@ -53,7 +54,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Cmd(Msg)) {
       Model(..model, drops: new_drops, animations: new_animations)
     }
   }
-  #(m, animation.cmd(m.animations, Tick))
+  #(m, animation.effect(m.animations, Tick))
 }
 
 pub fn render(model: Model) -> Element(Msg) {
@@ -74,13 +75,14 @@ pub fn render(model: Model) -> Element(Msg) {
           style([#("position", "relative")]),
           on(
             "mouseDown",
-            fn(event, dispatch) {
+            fn(event) {
               let assert Ok(x) = d.field("clientX", d.float)(event)
               let assert Ok(y) = d.field("clientY", d.float)(event)
               let rect = bounding_client_rect("pond")
               let assert Ok(top) = d.field("top", d.float)(rect)
               let assert Ok(left) = d.field("left", d.float)(rect)
-              dispatch(Click(x -. left, y -. top))
+
+              Ok(Click(x -. left, y -. top))
             },
           ),
         ],

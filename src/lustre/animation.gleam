@@ -1,4 +1,4 @@
-import lustre/cmd.{Cmd}
+import lustre/effect.{Effect}
 import gleam/list.{filter, find, map}
 
 /// A singleton holding all your animations, and a timestamp
@@ -28,7 +28,7 @@ pub fn new() {
 
 /// Add an animation (linear interpolation) from `start` to `stop`, for `seconds` duration.
 /// The `name` should be unique, so the animation can be retrieved and evaluated by `value()` later.
-/// The animation is started when a subsequent command from `cmd()` is returned by your
+/// The animation is started when a subsequent command from `effect()` is returned by your
 /// lustre `update()` function; followed by a call to `tick()`.
 pub fn add(
   animations: Animations,
@@ -103,12 +103,12 @@ fn tick_animation(animation: Animation, time: Float) -> Animation {
   Animation(name, range, new_state)
 }
 
-/// Returns `cmd.none()` if none of the animations is running.
-/// Otherwise returns an opaque `Cmd` that will cause `msg(time)` to
+/// Returns `effect.none()` if none of the animations is running.
+/// Otherwise returns an opaque `Effect` that will cause `msg(time)` to
 /// be dispatched on a JavaScript `requestAnimationFrame`
-pub fn cmd(animations: Animations, msg: fn(Float) -> m) -> Cmd(m) {
+pub fn effect(animations: Animations, msg: fn(Float) -> m) -> Effect(m) {
   case animations {
-    Animations(_, []) -> cmd.none()
+    Animations(_, []) -> effect.none()
     _ -> request_animation_frame(msg)
   }
 }
@@ -141,8 +141,8 @@ fn evaluate(animation: Animation, time: Float) -> Float {
   }
 }
 
-pub fn request_animation_frame(msg: fn(Float) -> m) -> Cmd(m) {
-  cmd.from(fn(dispatch) {
+pub fn request_animation_frame(msg: fn(Float) -> m) -> Effect(m) {
+  effect.from(fn(dispatch) {
     js_request_animation_frame(fn(time_offset: Float) {
       dispatch(msg(time_offset))
     })
@@ -154,7 +154,7 @@ pub type RequestedFrame
 
 // The returned 'long' can be passed to 'cancelAnimationFrame' - except we do not have any means to
 // TODO Push the 'long' down into JS land, with the Animation, so we can
-// make a mapping from Animation to RequestFrame and a `cancelFrame(Animation, msg) -> Cmd(m)`
+// make a mapping from Animation to RequestFrame and a `cancelFrame(Animation, msg) -> Effect(m)`
 // that (again in JS land) *can* cancel the appropriate request frame.
 @external(javascript, "../ffi.mjs", "request_animation_frame")
 fn js_request_animation_frame(f: fn(Float) -> m) -> RequestedFrame

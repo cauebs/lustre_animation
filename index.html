@@ -65,13 +65,14 @@ pub fn update(model: Model, msg: Msg) {
             <p>Click on the four buttons to manipulate the text horizontally,
                 and vertically.</p>
             <p>See <code>./test/example_move_around.gleam</code></p>
-            <div id="root"
-                style="width: calc(320px - 2em); height: 480; border: 2px solid grey; padding: 0 1em 1em 1em;">
-                <h1>Lustre Animation Example</h1>
-                Please wait for the JavaScript (compiled Gleam) to take over.
-                <noscript>
-                    <p>This site needs JavaScript to run, please enable/allow it.</p>
-                </noscript>
+            <div style="width: calc(320px - 2em); height: 480; border: 2px solid grey; padding: 0 1em 1em 1em;">
+                <div id="root">
+                    <h1>Lustre Animation Example</h1>
+                    Please wait for the JavaScript (compiled Gleam) to take over.
+                    <noscript>
+                        <p>This site needs JavaScript to run, please enable/allow it.</p>
+                    </noscript>
+                </div>
             </div>
         </div>
         <script src="./test/example_two_independent.mjs" type="module"></script>
@@ -80,12 +81,14 @@ pub fn update(model: Model, msg: Msg) {
             <h2>2. Many animations that are all 'the same'</h2>
             <p>Each drop behaves in the same way. Click in the area to generate them.</p>
             <p>See <code>./test/example_drops.gleam</code></p>
-            <div id="drops" style="width: calc(320px - 2em); height: 480; border: 2px solid grey; padding: 1em;">
-                <h1>Lustre Animation Example</h1>
-                Please wait for the JavaScript (compiled Gleam) to take over.
-                <noscript>
-                    <p>This site needs JavaScript to run, please enable/allow it.</p>
-                </noscript>
+            <div style="width: calc(320px - 2em); height: 480; border: 2px solid grey; padding: 1em;">
+                <div id="drops">
+                    <h1>Lustre Animation Example</h1>
+                    Please wait for the JavaScript (compiled Gleam) to take over.
+                    <noscript>
+                        <p>This site needs JavaScript to run, please enable/allow it.</p>
+                    </noscript>
+                </div>
             </div>
         </div>
         <script src="./test/example_drops.mjs" type="module"></script>

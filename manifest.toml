@@ -2,11 +2,12 @@
 # You typically do not need to edit this file
 
 packages = [
-  { name = "gleam_stdlib", version = "0.30.2", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "8D8BF3790AA31176B1E1C0B517DD74C86DA8235CF3389EA02043EE4FD82AE3DC" },
-  { name = "gleeunit", version = "0.11.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "1397E5C4AC4108769EE979939AC39BF7870659C5AFB714630DEEEE16B8272AD5" },
-  { name = "lustre", version = "3.0.2", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "lustre", source = "hex", outer_checksum = "9A18A7588776C14FD14D3838DF5881EF12C611C2F55637DA528A60BCCA135B41" },
+  { name = "gleam_stdlib", version = "0.34.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "1FB8454D2991E9B4C0C804544D8A9AD0F6184725E20D63C3155F0AEB4230B016" },
+  { name = "gleeunit", version = "1.0.2", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "D364C87AFEB26BDB4FB8A5ABDE67D635DC9FA52D6AB68416044C35B096C6882D" },
+  { name = "lustre", version = "3.1.2", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "lustre", source = "hex", outer_checksum = "B2A498D83088FB13140645D74AE90FB5A171A715BD12508EB6284EAA8D94EDC8" },
 ]
 
 [requirements]
-gleeunit = { version = "~> 0.10" }
+gleam_stdlib = { version = "~> 0.34" }
+gleeunit = { version = "~> 1.0" }
 lustre = { version = "~> 3.0" }

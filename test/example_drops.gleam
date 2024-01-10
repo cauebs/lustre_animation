@@ -1,14 +1,14 @@
 import lustre
-import lustre/animation.{Animations}
+import lustre/animation.{type Animations}
 import lustre/attribute.{id, style}
-import lustre/effect.{Effect}
-import lustre/element.{Element, text}
+import lustre/effect.{type Effect}
+import lustre/element.{type Element, text}
 import lustre/element/html.{div, h3}
 import lustre/event.{on}
 import gleam/float
 import gleam/int
 import gleam/list.{filter, map}
-import gleam/dynamic.{Dynamic} as d
+import gleam/dynamic.{type Dynamic} as d
 
 pub type Msg {
   Click(x: Float, y: Float)
@@ -73,18 +73,15 @@ pub fn render(model: Model) -> Element(Msg) {
         [
           id("pond"),
           style([#("position", "relative")]),
-          on(
-            "mouseDown",
-            fn(event) {
-              let assert Ok(x) = d.field("clientX", d.float)(event)
-              let assert Ok(y) = d.field("clientY", d.float)(event)
-              let rect = bounding_client_rect("pond")
-              let assert Ok(top) = d.field("top", d.float)(rect)
-              let assert Ok(left) = d.field("left", d.float)(rect)
+          on("mouseDown", fn(event) {
+            let assert Ok(x) = d.field("clientX", d.float)(event)
+            let assert Ok(y) = d.field("clientY", d.float)(event)
+            let rect = bounding_client_rect("pond")
+            let assert Ok(top) = d.field("top", d.float)(rect)
+            let assert Ok(left) = d.field("left", d.float)(rect)
 
-              Ok(Click(x -. left, y -. top))
-            },
-          ),
+            Ok(Click(x -. left, y -. top))
+          }),
         ],
         map(model.drops, render_drop),
       ),

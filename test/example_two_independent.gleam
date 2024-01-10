@@ -1,7 +1,7 @@
 import lustre
-import lustre/animation.{Animations}
+import lustre/animation.{type Animations}
 import lustre/attribute.{style}
-import lustre/effect.{Effect}
+import lustre/effect.{type Effect}
 import lustre/element.{text}
 import lustre/element/html.{button, div, h3, span}
 import lustre/event.{on_click}
@@ -79,25 +79,28 @@ pub fn render(model: Model) {
             #("display", "grid"),
             #(
               "grid-template-rows",
-              to_s(model.y) <> "fr auto " <> to_s(1.0 -. model.y) <> "fr",
+              to_s(model.y)
+              <> "fr auto "
+              <> to_s(1.0 -. model.y)
+              <> "fr",
             ),
             #(
               "grid-template-columns",
-              to_s(model.x) <> "fr auto " <> to_s(1.0 -. model.x) <> "fr",
+              to_s(model.x)
+              <> "fr auto "
+              <> to_s(1.0 -. model.x)
+              <> "fr",
             ),
           ]),
         ],
         [sp, sp, sp, sp, h3([], [text("Move me around")]), sp, sp, sp, sp],
       ),
-      div(
-        [],
-        [
-          button([on_click(Left)], [text("Move to the Left")]),
-          button([on_click(Right)], [text("Move to the Right")]),
-          button([on_click(Top)], [text("Move to the Top")]),
-          button([on_click(Bottom)], [text("Move to the Bottom")]),
-        ],
-      ),
+      div([], [
+        button([on_click(Left)], [text("Move to the Left")]),
+        button([on_click(Right)], [text("Move to the Right")]),
+        button([on_click(Top)], [text("Move to the Top")]),
+        button([on_click(Bottom)], [text("Move to the Bottom")]),
+      ]),
     ],
   )
 }

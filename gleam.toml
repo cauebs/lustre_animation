@@ -1,8 +1,8 @@
 name = "lustre_animation"
 version = "0.3.0"
-description = "Animations for lustre, utilizing JS requestAnimationFrame"
+description = "Animations for lustre, utilizing JS requestAnimationFrame and setTimeout"
 target = "javascript"
 licenses = ["MIT"]
 repository = { type = "custom", url = "https://git.chmeee.org/lustre_animation" }
-dependencies = { lustre = "~> 3.0" }
-dev-dependencies = { gleeunit = "~> 0.10" }
+dependencies = { lustre = "~> 3.0", gleam_stdlib = "~> 0.34" }
+dev-dependencies = { gleeunit = "~> 1.0" }

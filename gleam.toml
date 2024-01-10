@@ -1,5 +1,5 @@
 name = "lustre_animation"
-version = "0.3.0"
+version = "0.3.1"
 description = "Animations for lustre, utilizing JS requestAnimationFrame and setTimeout"
 target = "javascript"
 licenses = ["MIT"]

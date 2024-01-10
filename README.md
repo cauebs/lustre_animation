@@ -46,7 +46,6 @@ and then pointing your browser to the URL that vite indicates.
 
 ## TODO
 * `every(Minute)`, etc
-* `after(seconds: 2.5)`
 * quadratic, cubic, etc interpolators
 * Compose animations
   `from("anim", 1.0) |> after(0.250) |> cubic(3.0, 0.250) |> after(0.250) |> quadr(2.0, 0.250)`

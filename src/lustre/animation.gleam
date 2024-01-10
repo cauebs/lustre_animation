@@ -1,4 +1,4 @@
-import lustre/effect.{Effect}
+import lustre/effect.{type Effect}
 import gleam/list.{filter, find, map}
 
 /// A singleton holding all your animations, and a timestamp
@@ -161,3 +161,44 @@ fn js_request_animation_frame(f: fn(Float) -> m) -> RequestedFrame
 
 @external(javascript, "../ffi.mjs", "cancel_animation_frame")
 fn cancel_animation_frame(frame: RequestedFrame) -> Nil
+
+// After
+
+pub type TimeoutId
+
+pub fn after(ms: Float, msg_after, msg_bell) {
+  effect.from(fn(dispatch) {
+    js_after(fn() { dispatch(msg_bell) }, ms, fn(timeout_id) {
+      dispatch(msg_after(timeout_id))
+    })
+    Nil
+  })
+}
+
+@external(javascript, "../ffi.mjs", "after")
+fn js_after(
+  f: fn() -> Nil,
+  ms: Float,
+  get_timeout_id: fn(TimeoutId) -> Nil,
+) -> TimeoutId
+
+pub fn cancel(timeout_id: TimeoutId) {
+  effect.from(fn(_dispatch) { js_cancel(timeout_id) })
+}
+
+@external(javascript, "../ffi.mjs", "cancel")
+fn js_cancel(timeout_id: TimeoutId) -> Nil
+
+// Parse into number and unit, so we can animate over it
+
+import gleam/float
+import gleam/option.{Some}
+import gleam/regex.{Match}
+
+fn parse_edge(edge: String) {
+  let assert Ok(re) = regex.from_string("(\\d+)(\\w+)")
+  let [match] = regex.scan(re, edge)
+  let Match(_, [Some(nr_str), Some(unit), ..]) = match
+  let assert Ok(edge) = float.parse(nr_str <> ".0")
+  #(edge, unit)
+}

@@ -197,8 +197,8 @@ import gleam/regex.{Match}
 
 fn parse_edge(edge: String) {
   let assert Ok(re) = regex.from_string("(\\d+)(\\w+)")
-  let [match] = regex.scan(re, edge)
-  let Match(_, [Some(nr_str), Some(unit), ..]) = match
+  let assert [match] = regex.scan(re, edge)
+  let assert Match(_, [Some(nr_str), Some(unit), ..]) = match
   let assert Ok(edge) = float.parse(nr_str <> ".0")
   #(edge, unit)
 }

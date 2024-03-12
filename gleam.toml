@@ -4,5 +4,10 @@ description = "Animations for lustre, utilizing JS requestAnimationFrame and set
 target = "javascript"
 licenses = ["MIT"]
 repository = { type = "custom", url = "https://git.chmeee.org/lustre_animation" }
-dependencies = { lustre = "~> 3.0", gleam_stdlib = "~> 0.34" }
-dev-dependencies = { gleeunit = "~> 1.0" }
+
+[dependencies]
+gleam_stdlib = "~> 0.34"
+lustre = "~> 3.0 or ~> 4.0"
+
+[dev-dependencies]
+gleeunit = "~> 1.0"

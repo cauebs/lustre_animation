@@ -3,7 +3,10 @@ version = "0.3.1"
 description = "Animations for lustre, utilizing JS requestAnimationFrame and setTimeout"
 target = "javascript"
 licenses = ["MIT"]
-repository = { type = "custom", url = "https://git.chmeee.org/lustre_animation" }
+repository = { type = "codeberg", user = "kero", repo = "lustre_animation" }
+links = [
+    { title = "Home Page", href = "https://git.chmeee.org/lustre_animation" },
+]
 
 [dependencies]
 gleam_stdlib = "~> 0.34 or ~> 1.0"

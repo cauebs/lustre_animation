@@ -3,7 +3,7 @@
 The basic usage is
  * keep 1 `Animations` value
  * add animations by some trigger
- * call `animation.cmd()` on your value and let your lustre `update()` return it.
+ * call `animation.effect()` on your value and let your lustre `update()` return it.
    This will cause a dispatch on the next JS animation frame, unless all animations have finished (and auto-removed)
  * update the animations with the new time.
  * evaluate for each animation you are interested in.
@@ -29,7 +29,7 @@ pub fn update(model: Model, msg: Msg) {
             Model(new_value, new_anim)
         }
     }
-    #(m, animation.cmd(m.animations, Tick))
+    #(m, animation.effect(m.animations, Tick))
 }
 ```
 

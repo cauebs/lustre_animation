@@ -22,7 +22,8 @@ type AnimationState {
   Done
 }
 
-pub fn new() {
+/// Create an empty list of animations.
+pub fn new() -> Animations {
   Animations(0.0, [])
 }
 
@@ -166,7 +167,7 @@ fn cancel_animation_frame(frame: RequestedFrame) -> Nil
 
 pub type TimeoutId
 
-pub fn after(ms: Float, msg_after, msg_bell) {
+pub fn after(ms: Float, msg_after: fn(TimeoutId) -> m, msg_bell: m) -> Effect(m) {
   effect.from(fn(dispatch) {
     js_after(fn() { dispatch(msg_bell) }, ms, fn(timeout_id) {
       dispatch(msg_after(timeout_id))
@@ -182,7 +183,7 @@ fn js_after(
   get_timeout_id: fn(TimeoutId) -> Nil,
 ) -> TimeoutId
 
-pub fn cancel(timeout_id: TimeoutId) {
+pub fn cancel(timeout_id: TimeoutId) -> Effect(a) {
   effect.from(fn(_dispatch) { js_cancel(timeout_id) })
 }
 

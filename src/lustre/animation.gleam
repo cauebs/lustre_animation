@@ -1,12 +1,15 @@
-import lustre/effect.{type Effect}
+import gleam/float
 import gleam/list.{filter, find, map}
+import gleam/option.{Some}
+import gleam/regexp.{Match}
+import lustre/effect.{type Effect}
 
 /// A singleton holding all your animations, and a timestamp
 pub opaque type Animations {
-  Animations(t: Float, List(Animation))
+  Animations(t: Float, animations: List(Animation))
 }
 
-type Animation {
+pub opaque type Animation {
   Animation(name: String, range: #(Float, Float), state: AnimationState)
 }
 
@@ -55,12 +58,12 @@ fn change_list(
   animations: Animations,
   f: fn(List(Animation)) -> List(Animation),
 ) -> Animations {
-  let assert Animations(t, list) = animations
+  let Animations(t, list) = animations
   Animations(t, f(list))
 }
 
 fn does_not_have_name(animation: Animation, name: String) {
-  let assert Animation(n, _, _) = animation
+  let Animation(n, _, _) = animation
   n != name
 }
 
@@ -75,7 +78,7 @@ fn does_not_have_name(animation: Animation, name: String) {
 /// When called the *second* time for animations that have finished, they will be absent
 /// from the returned value.
 pub fn tick(animations: Animations, time_offset) -> Animations {
-  let assert Animations(_, list) = animations
+  let Animations(_, list) = animations
   let new_list =
     list
     |> filter(not_done)
@@ -91,7 +94,7 @@ fn not_done(animation: Animation) -> Bool {
 }
 
 fn tick_animation(animation: Animation, time: Float) -> Animation {
-  let assert Animation(name, range, state) = animation
+  let Animation(name, range, state) = animation
   let new_state = case state {
     NotStarted(seconds) -> Running(seconds, since: time)
     Running(seconds, since) ->
@@ -117,7 +120,7 @@ pub fn effect(animations: Animations, msg: fn(Float) -> m) -> Effect(m) {
 /// If the animation specified by `which` is not found, returns `default`.
 /// Otherwise, the interpolated value for the `time` passed to `tick()` is returned.
 pub fn value(animations: Animations, which: String, default: Float) -> Float {
-  let assert Animations(t, list) = animations
+  let Animations(t, list) = animations
   case find(list, has_name(_, which)) {
     Ok(animation) -> evaluate(animation, t)
     Error(Nil) -> default
@@ -125,12 +128,12 @@ pub fn value(animations: Animations, which: String, default: Float) -> Float {
 }
 
 fn has_name(animation: Animation, name: String) {
-  let assert Animation(n, _, _) = animation
+  let Animation(n, _, _) = animation
   n == name
 }
 
 fn evaluate(animation: Animation, time: Float) -> Float {
-  let assert Animation(_, #(start, stop), state) = animation
+  let Animation(_, #(start, stop), state) = animation
   case state {
     NotStarted(_) -> start
     Running(seconds, since) -> {
@@ -192,13 +195,9 @@ fn js_cancel(timeout_id: TimeoutId) -> Nil
 
 // Parse into number and unit, so we can animate over it
 
-import gleam/float
-import gleam/option.{Some}
-import gleam/regex.{Match}
-
 fn parse_edge(edge: String) {
-  let assert Ok(re) = regex.from_string("(\\d+)(\\w+)")
-  let assert [match] = regex.scan(re, edge)
+  let assert Ok(re) = regexp.from_string("(\\d+)(\\w+)")
+  let assert [match] = regexp.scan(re, edge)
   let assert Match(_, [Some(nr_str), Some(unit), ..]) = match
   let assert Ok(edge) = float.parse(nr_str <> ".0")
   #(edge, unit)

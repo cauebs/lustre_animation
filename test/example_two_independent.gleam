@@ -1,11 +1,11 @@
+import gleam/float
 import lustre
 import lustre/animation.{type Animations}
-import lustre/attribute.{style}
+import lustre/attribute.{styles}
 import lustre/effect.{type Effect}
 import lustre/element.{text}
 import lustre/element/html.{button, div, h3, span}
 import lustre/event.{on_click}
-import gleam/float
 
 pub type Msg {
   Left
@@ -65,7 +65,7 @@ pub fn render(model: Model) {
   let to_s = float.to_string
   div(
     [
-      style([
+      styles([
         #("display", "grid"),
         #("grid-template-rows", "1fr auto"),
         #("width", "100%"),
@@ -75,21 +75,15 @@ pub fn render(model: Model) {
     [
       div(
         [
-          style([
+          styles([
             #("display", "grid"),
             #(
               "grid-template-rows",
-              to_s(model.y)
-              <> "fr auto "
-              <> to_s(1.0 -. model.y)
-              <> "fr",
+              to_s(model.y) <> "fr auto " <> to_s(1.0 -. model.y) <> "fr",
             ),
             #(
               "grid-template-columns",
-              to_s(model.x)
-              <> "fr auto "
-              <> to_s(1.0 -. model.x)
-              <> "fr",
+              to_s(model.x) <> "fr auto " <> to_s(1.0 -. model.x) <> "fr",
             ),
           ]),
         ],

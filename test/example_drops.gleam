@@ -1,14 +1,15 @@
+import gleam/dynamic
+import gleam/dynamic/decode as d
+import gleam/float
+import gleam/int
+import gleam/list.{filter, map}
 import lustre
 import lustre/animation.{type Animations}
-import lustre/attribute.{id, style}
+import lustre/attribute.{id, styles}
 import lustre/effect.{type Effect}
 import lustre/element.{type Element, text}
 import lustre/element/html.{div, h3}
 import lustre/event.{on}
-import gleam/float
-import gleam/int
-import gleam/list.{filter, map}
-import gleam/dynamic.{type Dynamic} as d
 
 pub type Msg {
   Click(x: Float, y: Float)
@@ -60,7 +61,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 pub fn render(model: Model) -> Element(Msg) {
   div(
     [
-      style([
+      styles([
         #("width", "100%"),
         #("height", "100%"),
         #("display", "grid"),
@@ -68,19 +69,22 @@ pub fn render(model: Model) -> Element(Msg) {
       ]),
     ],
     [
-      h3([style([#("text-align", "center")])], [text("Click to make drops")]),
+      h3([styles([#("text-align", "center")])], [text("Click to make drops")]),
       div(
         [
           id("pond"),
-          style([#("position", "relative")]),
-          on("mouseDown", fn(event) {
-            let assert Ok(x) = d.field("clientX", d.float)(event)
-            let assert Ok(y) = d.field("clientY", d.float)(event)
+          styles([#("position", "relative")]),
+          event.on("mousedown", {
+            use x <- d.field("clientX", d.float)
+            use y <- d.field("clientY", d.float)
             let rect = bounding_client_rect("pond")
-            let assert Ok(top) = d.field("top", d.float)(rect)
-            let assert Ok(left) = d.field("left", d.float)(rect)
-
-            Ok(Click(x -. left, y -. top))
+            let assert Ok(#(top, left)) =
+              d.run(rect, {
+                use top <- d.field("top", d.float)
+                use left <- d.field("left", d.float)
+                d.success(#(top, left))
+              })
+            d.success(Click(x -. left, y -. top))
           }),
         ],
         map(model.drops, render_drop),
@@ -98,7 +102,7 @@ fn render_drop(drop: Drop) {
     |> float.to_string
   div(
     [
-      style([
+      styles([
         #("position", "absolute"),
         #("left", float.to_string(drop.x -. r) <> "px"),
         #("top", float.to_string(drop.y -. r) <> "px"),
@@ -113,4 +117,4 @@ fn render_drop(drop: Drop) {
 }
 
 @external(javascript, "./info.mjs", "bounding_client_rect")
-fn bounding_client_rect(str: String) -> Dynamic
+fn bounding_client_rect(str: String) -> dynamic.Dynamic

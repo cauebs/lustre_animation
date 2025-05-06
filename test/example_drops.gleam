@@ -3,17 +3,18 @@ import gleam/dynamic/decode as d
 import gleam/float
 import gleam/int
 import gleam/list.{filter, map}
+import gleam/result
 import lustre
-import lustre/animation.{type Animations}
+import lustre/animation.{type Animator, type Timestamp}
 import lustre/attribute.{id, styles}
 import lustre/effect.{type Effect}
 import lustre/element.{type Element, text}
 import lustre/element/html.{div, h3}
-import lustre/event.{on}
+import lustre/event
 
 pub type Msg {
   Click(x: Float, y: Float)
-  Tick(time_offset: Float)
+  Tick(timestamp: Timestamp)
 }
 
 pub type Drop {
@@ -21,7 +22,7 @@ pub type Drop {
 }
 
 pub type Model {
-  Model(counter: Int, drops: List(Drop), animations: Animations)
+  Model(counter: Int, drops: List(Drop), animations: Animator(String, Float))
 }
 
 pub fn main() {
@@ -30,7 +31,7 @@ pub fn main() {
 }
 
 fn init(_) {
-  #(Model(0, [], animation.new()), effect.none())
+  #(Model(0, [], animation.empty()), effect.none())
 }
 
 const to_s = int.to_string
@@ -39,17 +40,23 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   let m = case msg {
     Click(x, y) -> {
       let id = "drop" <> to_s(model.counter)
-      let new_animations = animation.add(model.animations, id, 0.0, 1.0, 1.5)
+      let new_animation = animation.create(with: fn(t) { t }, for: 1500.0)
       let new_drop = Drop(id, x, y, 0.0)
-      Model(model.counter + 1, [new_drop, ..model.drops], new_animations)
+      Model(
+        model.counter + 1,
+        [new_drop, ..model.drops],
+        model.animations |> animation.add(id, new_animation),
+      )
     }
-    Tick(time_offset) -> {
-      let new_animations = animation.tick(model.animations, time_offset)
+    Tick(timestamp) -> {
+      let new_animations = animation.tick(model.animations, timestamp)
       let new_drops =
         model.drops
         |> filter(fn(drop) { drop.r != 1.0 })
         |> map(fn(drop) {
-          let r = animation.value(new_animations, drop.id, drop.r)
+          let r =
+            animation.value(new_animations, drop.id)
+            |> result.unwrap(or: drop.r)
           Drop(..drop, r: r)
         })
       Model(..model, drops: new_drops, animations: new_animations)

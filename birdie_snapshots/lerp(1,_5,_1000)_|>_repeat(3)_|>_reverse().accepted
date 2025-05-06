@@ -1,0 +1,14 @@
+---
+version: 1.2.7
+title: lerp(1, 5, 1000) |> repeat(3) |> reverse()
+file: ./test/lustre/animation_test.gleam
+test_name: repeat_then_reverse_test
+---
+Sequence(Sequence(OneShot(//fn(a) { ... }, duration: 1000), next: OneShot(//fn(a) { ... }, duration: 1000)), next: OneShot(//fn(a) { ... }, duration: 1000))
+#(Timestamp(0), 5)
+#(Timestamp(500), 3)
+#(Timestamp(1000), 5)
+#(Timestamp(1500), 3)
+#(Timestamp(2000), 5)
+#(Timestamp(2500), 3)
+#(Timestamp(3000), 1)

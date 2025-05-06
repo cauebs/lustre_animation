@@ -1,6 +1,8 @@
 import gleam/float
+import gleam/result
 import lustre
-import lustre/animation.{type Animations}
+import lustre/animation.{type Animator, type Timestamp}
+import lustre/animation/interpolation.{lerp}
 import lustre/attribute.{styles}
 import lustre/effect.{type Effect}
 import lustre/element.{text}
@@ -12,11 +14,11 @@ pub type Msg {
   Right
   Top
   Bottom
-  Tick(time_offset: Float)
+  Tick(timestamp: Timestamp)
 }
 
 pub type Model {
-  Model(x: Float, y: Float, animations: Animations)
+  Model(x: Float, y: Float, animator: Animator(String, Float))
 }
 
 pub fn main() {
@@ -25,39 +27,55 @@ pub fn main() {
 }
 
 fn init(_) {
-  #(Model(0.5, 0.5, animation.new()), effect.none())
+  #(Model(0.5, 0.5, animation.empty()), effect.none())
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   let m = case msg {
     Left -> {
-      let new_animations =
-        animation.add(model.animations, "x", model.x, 0.0, 2.5)
-      Model(..model, animations: new_animations)
+      let new_animator =
+        model.animator
+        |> animation.add(
+          "x",
+          animation.create(with: lerp(model.x, 0.0), for: 2500.0),
+        )
+      Model(..model, animator: new_animator)
     }
     Right -> {
-      let new_animations =
-        animation.add(model.animations, "x", model.x, 1.0, 2.5)
-      Model(..model, animations: new_animations)
+      let new_animator =
+        model.animator
+        |> animation.add(
+          "x",
+          animation.create(with: lerp(model.x, 1.0), for: 2500.0),
+        )
+      Model(..model, animator: new_animator)
     }
     Top -> {
-      let new_animations =
-        animation.add(model.animations, "y", model.y, 0.0, 2.5)
-      Model(..model, animations: new_animations)
+      let new_animator =
+        model.animator
+        |> animation.add(
+          "y",
+          animation.create(with: lerp(model.y, 0.0), for: 2500.0),
+        )
+      Model(..model, animator: new_animator)
     }
     Bottom -> {
-      let new_animations =
-        animation.add(model.animations, "y", model.y, 1.0, 2.5)
-      Model(..model, animations: new_animations)
+      let new_animator =
+        model.animator
+        |> animation.add(
+          "y",
+          animation.create(with: lerp(model.y, 1.0), for: 2500.0),
+        )
+      Model(..model, animator: new_animator)
     }
-    Tick(time_offset) -> {
-      let new_animations = animation.tick(model.animations, time_offset)
-      let x = animation.value(new_animations, "x", model.x)
-      let y = animation.value(new_animations, "y", model.y)
-      Model(x: x, y: y, animations: new_animations)
+    Tick(timestamp) -> {
+      let new_animator = animation.tick(model.animator, timestamp)
+      let x = animation.value(new_animator, "x") |> result.unwrap(or: model.x)
+      let y = animation.value(new_animator, "y") |> result.unwrap(or: model.y)
+      Model(x: x, y: y, animator: new_animator)
     }
   }
-  #(m, animation.effect(m.animations, Tick))
+  #(m, animation.effect(m.animator, Tick))
 }
 
 pub fn render(model: Model) {

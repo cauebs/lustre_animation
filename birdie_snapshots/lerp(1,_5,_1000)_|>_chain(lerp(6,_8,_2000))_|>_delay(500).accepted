@@ -1,0 +1,15 @@
+---
+version: 1.2.7
+title: lerp(1, 5, 1000) |> chain(lerp(6, 8, 2000)) |> delay(500)
+file: ./test/lustre/animation_test.gleam
+test_name: chain_then_delay_test
+---
+Sequence(OneShot(//fn(a) { ... }, duration: 500), next: Sequence(OneShot(//fn(a) { ... }, duration: 1000), next: OneShot(//fn(a) { ... }, duration: 2000)))
+#(Timestamp(0), 1)
+#(Timestamp(500), 1)
+#(Timestamp(1000), 3)
+#(Timestamp(1500), 6)
+#(Timestamp(2000), 6.5)
+#(Timestamp(2500), 7)
+#(Timestamp(3000), 7.5)
+#(Timestamp(3500), 8)

@@ -1,204 +1,257 @@
-import gleam/float
-import gleam/list.{filter, find, map}
-import gleam/option.{Some}
-import gleam/regexp.{Match}
+import gleam/dict.{type Dict}
+import gleam/result
 import lustre/effect.{type Effect}
 
-/// A singleton holding all your animations, and a timestamp
-pub opaque type Animations {
-  Animations(t: Float, animations: List(Animation))
+/// Represents an animated value of a certain type. It can be created with [`create`](#create) and
+/// then added to an Animator along with an identifier, and later evaluated at a certain time.
+pub opaque type Animation(a) {
+  OneShot(fn(Float) -> a, duration: Float)
+  Sequence(Animation(a), next: Animation(a))
+  Looping(Animation(a))
 }
 
-pub opaque type Animation {
-  Animation(name: String, range: #(Float, Float), state: AnimationState)
-}
-
-//   InParallel(Animations)
-//   InSequence(Animations)
-//   Repeat(Animation)
-//   Cancelled(Animation)
-
-// The State Done will guarantee the `stop` value is returned, before the Animation is removed from the list
-type AnimationState {
-  NotStarted(seconds: Float)
-  Running(seconds: Float, since: Float)
-  Done
-}
-
-/// Create an empty list of animations.
-pub fn new() -> Animations {
-  Animations(0.0, [])
-}
-
-/// Add an animation (linear interpolation) from `start` to `stop`, for `seconds` duration.
-/// The `name` should be unique, so the animation can be retrieved and evaluated by `value()` later.
-/// The animation is started when a subsequent command from `effect()` is returned by your
-/// lustre `update()` function; followed by a call to `tick()`.
-pub fn add(
-  animations: Animations,
-  name,
-  start: Float,
-  stop: Float,
-  seconds: Float,
-) -> Animations {
-  use list <- change_list(animations)
-  [Animation(name, #(start, stop), NotStarted(seconds)), ..list]
-}
-
-/// Remove an animation if it should stop before it is finished.
-/// If an animation runs to its end normally, you do not have to `remove()` it manually,
-/// will be automatically removed by `tick()`.
-pub fn remove(animations: Animations, name) -> Animations {
-  use list <- change_list(animations)
-  filter(list, does_not_have_name(_, name))
-  // Would not filter, but replace w/ Cancelled and filtered in the next call, see comments at bottom of this file
-}
-
-fn change_list(
-  animations: Animations,
-  f: fn(List(Animation)) -> List(Animation),
-) -> Animations {
-  let Animations(t, list) = animations
-  Animations(t, f(list))
-}
-
-fn does_not_have_name(animation: Animation, name: String) {
-  let Animation(n, _, _) = animation
-  n != name
-}
-
-/// When called for the first time on an animation, its start time is
-/// set to time-Offset. Its stop time then is the start time plus the
-/// duration.
+/// Create an animation from an interpolation function that takes values from `0.0` when it starts
+/// to `1.0` when it ends, after the duration given in milliseconds.
 ///
-/// When called for the *first* time for animations that have finished,
-/// they will be marked as such in the result. `value()` will return the `stop` value
-/// that you passed with `add()`
+/// The [`animation/interpolation`](./animation/interpolation.html) module provides some simple
+/// functions to help you get started, such as a lerp (linear interpolation).
 ///
-/// When called the *second* time for animations that have finished, they will be absent
-/// from the returned value.
-pub fn tick(animations: Animations, time_offset) -> Animations {
-  let Animations(_, list) = animations
-  let new_list =
-    list
-    |> filter(not_done)
-    |> map(tick_animation(_, time_offset))
-  Animations(time_offset, new_list)
+/// See the [`delay`](#delay), [`repeat`](#repeat), [`repeat_forever`](#repeat_forever),
+/// [`reverse`](#reverse) and [`chain`](#chain) functions for ways to compose animations into more
+/// complex ones without requiring too complicated interpolation functions.
+pub fn create(with fun: fn(Float) -> a, for duration_ms: Float) -> Animation(a) {
+  OneShot(fun, duration: duration_ms)
 }
 
-fn not_done(animation: Animation) -> Bool {
+/// Delay the start of an animation by a duration given in milliseconds.
+pub fn delay(animation: Animation(a), delay_ms: Float) -> Animation(a) {
+  let initial_value = initial_value(animation)
+  Sequence(
+    OneShot(fn(_t) { initial_value }, duration: delay_ms),
+    next: animation,
+  )
+}
+
+/// Repeat an animation a given amount of times.
+pub fn repeat(animation: Animation(a), times: Int) -> Animation(a) {
+  case times {
+    1 -> animation
+    _ -> Sequence(animation, next: repeat(animation, times - 1))
+  }
+}
+
+/// Repeat an animation forever.
+pub fn repeat_forever(animation: Animation(a)) -> Animation(a) {
+  Looping(animation)
+}
+
+/// Reverse an animation.
+pub fn reverse(animation: Animation(a)) -> Animation(a) {
   case animation {
-    Animation(_, _, Done) -> False
-    _ -> True
+    OneShot(fun, duration:) ->
+      OneShot(fn(t) { fun(1.0 -. t) }, duration: duration)
+    Sequence(inner, next:) -> Sequence(reverse(next), reverse(inner))
+    Looping(animation) -> Looping(reverse(animation))
   }
 }
 
-fn tick_animation(animation: Animation, time: Float) -> Animation {
-  let Animation(name, range, state) = animation
-  let new_state = case state {
-    NotStarted(seconds) -> Running(seconds, since: time)
-    Running(seconds, since) ->
-      case time -. since >=. seconds *. 1000.0 {
-        True -> Done
-        False -> state
-      }
-    Done -> Done
+/// Chain two animations so that when one ends the other one starts.
+pub fn chain(animation: Animation(a), next: Animation(a)) -> Animation(a) {
+  Sequence(animation, next:)
+}
+
+fn initial_value(animation: Animation(a)) -> a {
+  case animation {
+    OneShot(fun, _) -> fun(0.0)
+    Sequence(first, _) -> initial_value(first)
+    Looping(animation) -> initial_value(animation)
   }
-  Animation(name, range, new_state)
+}
+
+fn final_value(animation: Animation(a)) -> a {
+  case animation {
+    OneShot(fun, _) -> fun(1.0)
+    Sequence(_, next:) -> final_value(next)
+    Looping(animation) -> final_value(animation)
+  }
+}
+
+/// A collection that holds animations of a certain type and their current states.
+pub opaque type Animator(id, a) {
+  Animator(t: Float, animations: Dict(id, AnimationState(a)))
+}
+
+/// Create an empty Animator.
+pub fn empty() -> Animator(id, a) {
+  Animator(0.0, dict.new())
+}
+
+/// Add an animation to the Animator. The animation must be given an identifier which can later be
+/// used to obtain its current value or cancel it.
+pub fn add(
+  animator: Animator(id, a),
+  animation_id: id,
+  animation: Animation(a),
+) -> Animator(id, a) {
+  Animator(
+    ..animator,
+    animations: animator.animations
+      |> dict.insert(animation_id, NotStarted(animation)),
+  )
+}
+
+/// Add many animations to the Animator. Has the same effect as calling [`add`](#add) several times.
+pub fn add_many(
+  animator: Animator(id, a),
+  new_animations: List(#(id, Animation(a))),
+) -> Animator(id, a) {
+  let animations =
+    new_animations
+    |> dict.from_list()
+    |> dict.map_values(fn(_id, animation) { NotStarted(animation) })
+    |> dict.merge(animator.animations)
+
+  Animator(..animator, animations:)
+}
+
+/// Remove the animation specified by the identifier from the Animator.
+pub fn cancel(animator: Animator(id, a), animation_id: id) -> Animator(id, a) {
+  Animator(
+    ..animator,
+    animations: animator.animations
+      |> dict.delete(animation_id),
+  )
+}
+
+/// List the identifiers of the animations contained in the Animator.
+pub fn ids(animator: Animator(id, a)) -> List(id) {
+  dict.keys(animator.animations)
+}
+
+/// Represents the end time of the previous frame's rendering.
+pub opaque type Timestamp {
+  Timestamp(Float)
+}
+
+fn timestamp_to_millis(timestamp: Timestamp) -> Float {
+  let Timestamp(ms) = timestamp
+  ms
+}
+
+@internal
+pub fn timestamp_from_millis(ms: Float) -> Timestamp {
+  Timestamp(ms)
+}
+
+/// Update all animations with the timestamp obtained from a message produced by `effect`.
+pub fn tick(animator: Animator(id, a), timestamp: Timestamp) -> Animator(id, a) {
+  let elapsed_ms = timestamp_to_millis(timestamp)
+
+  let animations =
+    animator.animations
+    |> dict.filter(fn(_id, state) {
+      case state {
+        Done(_) -> False
+        _ -> True
+      }
+    })
+    |> dict.map_values(fn(_id, state) { tick_animation(state, elapsed_ms) })
+
+  Animator(t: elapsed_ms, animations:)
+}
+
+type AnimationState(a) {
+  NotStarted(Animation(a))
+  Running(Animation(a), start: Float)
+  // The state Done will guarantee the value for t=1.0 is returned,
+  // before the Animation is removed from the list.
+  Done(Animation(a))
+}
+
+fn tick_animation(
+  state: AnimationState(a),
+  elapsed_ms: Float,
+) -> AnimationState(a) {
+  case state {
+    NotStarted(animation) -> Running(animation, start: elapsed_ms)
+
+    Running(OneShot(_, duration:) as animation, start:) ->
+      case elapsed_ms >=. start +. duration {
+        True -> Done(animation)
+        False -> Running(animation, start: start)
+      }
+
+    Running(Sequence(inner, next:), start:) ->
+      case Running(inner, start:) |> tick_animation(elapsed_ms) {
+        NotStarted(_) -> panic
+        Running(animation, start:) ->
+          Running(Sequence(animation, next:), start:)
+        Done(_) -> Running(next, start: elapsed_ms)
+      }
+
+    Running(Looping(inner), start:) ->
+      case Running(inner, start:) |> tick_animation(elapsed_ms) {
+        NotStarted(_) -> panic
+        Running(..) -> state
+        Done(_) -> Running(Looping(inner), start: elapsed_ms)
+      }
+
+    Done(animation) -> Done(animation)
+  }
+}
+
+/// If the animation specified by `which` is not found, returns `Error(Nil)`.
+/// Otherwise, the current value for the animation is returned.
+pub fn value(animator: Animator(id, a), which: id) -> Result(a, Nil) {
+  animator.animations
+  |> dict.get(which)
+  |> result.map(evaluate(_, animator.t))
+}
+
+/// Evaluates all animations contained in the Animator and returns their values.
+pub fn values(animator: Animator(id, a)) -> Dict(id, a) {
+  animator.animations
+  |> dict.map_values(fn(_id, animation) { evaluate(animation, animator.t) })
+}
+
+fn evaluate(animation: AnimationState(a), elapsed_time: Float) -> a {
+  case animation {
+    NotStarted(animation) -> initial_value(animation)
+
+    Running(animation, start:) -> {
+      case animation {
+        OneShot(fun, duration:) -> fun({ elapsed_time -. start } /. duration)
+        Sequence(inner, _) | Looping(inner) ->
+          evaluate(Running(inner, start:), elapsed_time)
+      }
+    }
+
+    Done(animation) -> {
+      final_value(animation)
+    }
+  }
 }
 
 /// Returns `effect.none()` if none of the animations is running.
-/// Otherwise returns an opaque `Effect` that will cause `msg(time)` to
+/// Otherwise returns an opaque `Effect` that will cause `msg(timestamp)` to
 /// be dispatched on a JavaScript `requestAnimationFrame`
-pub fn effect(animations: Animations, msg: fn(Float) -> m) -> Effect(m) {
-  case animations {
-    Animations(_, []) -> effect.none()
-    _ -> request_animation_frame(msg)
+pub fn effect(
+  animator: Animator(id, a),
+  msg: fn(Timestamp) -> msg,
+) -> Effect(msg) {
+  case dict.is_empty(animator.animations) {
+    True -> effect.none()
+    False ->
+      effect.from(fn(dispatch) {
+        js_request_animation_frame(fn(timestamp: Float) {
+          dispatch(msg(Timestamp(timestamp)))
+        })
+        Nil
+      })
   }
 }
 
-/// If the animation specified by `which` is not found, returns `default`.
-/// Otherwise, the interpolated value for the `time` passed to `tick()` is returned.
-pub fn value(animations: Animations, which: String, default: Float) -> Float {
-  let Animations(t, list) = animations
-  case find(list, has_name(_, which)) {
-    Ok(animation) -> evaluate(animation, t)
-    Error(Nil) -> default
-  }
-}
+type RequestedFrame
 
-fn has_name(animation: Animation, name: String) {
-  let Animation(n, _, _) = animation
-  n == name
-}
-
-fn evaluate(animation: Animation, time: Float) -> Float {
-  let Animation(_, #(start, stop), state) = animation
-  case state {
-    NotStarted(_) -> start
-    Running(seconds, since) -> {
-      let dt = time -. since
-      let delta = dt /. { seconds *. 1000.0 }
-      start +. { stop -. start } *. delta
-    }
-    Done -> stop
-  }
-}
-
-pub fn request_animation_frame(msg: fn(Float) -> m) -> Effect(m) {
-  effect.from(fn(dispatch) {
-    js_request_animation_frame(fn(time_offset: Float) {
-      dispatch(msg(time_offset))
-    })
-    Nil
-  })
-}
-
-pub type RequestedFrame
-
-// The returned 'long' can be passed to 'cancelAnimationFrame' - except we do not have any means to
-// TODO Push the 'long' down into JS land, with the Animation, so we can
-// make a mapping from Animation to RequestFrame and a `cancelFrame(Animation, msg) -> Effect(m)`
-// that (again in JS land) *can* cancel the appropriate request frame.
 @external(javascript, "../ffi.mjs", "request_animation_frame")
-fn js_request_animation_frame(f: fn(Float) -> m) -> RequestedFrame
-
-@external(javascript, "../ffi.mjs", "cancel_animation_frame")
-fn cancel_animation_frame(frame: RequestedFrame) -> Nil
-
-// After
-
-pub type TimeoutId
-
-pub fn after(ms: Float, msg_after: fn(TimeoutId) -> m, msg_bell: m) -> Effect(m) {
-  effect.from(fn(dispatch) {
-    js_after(fn() { dispatch(msg_bell) }, ms, fn(timeout_id) {
-      dispatch(msg_after(timeout_id))
-    })
-    Nil
-  })
-}
-
-@external(javascript, "../ffi.mjs", "after")
-fn js_after(
-  f: fn() -> Nil,
-  ms: Float,
-  get_timeout_id: fn(TimeoutId) -> Nil,
-) -> TimeoutId
-
-pub fn cancel(timeout_id: TimeoutId) -> Effect(a) {
-  effect.from(fn(_dispatch) { js_cancel(timeout_id) })
-}
-
-@external(javascript, "../ffi.mjs", "cancel")
-fn js_cancel(timeout_id: TimeoutId) -> Nil
-
-// Parse into number and unit, so we can animate over it
-
-fn parse_edge(edge: String) {
-  let assert Ok(re) = regexp.from_string("(\\d+)(\\w+)")
-  let assert [match] = regexp.scan(re, edge)
-  let assert Match(_, [Some(nr_str), Some(unit), ..]) = match
-  let assert Ok(edge) = float.parse(nr_str <> ".0")
-  #(edge, unit)
-}
+fn js_request_animation_frame(f: fn(Float) -> msg) -> RequestedFrame

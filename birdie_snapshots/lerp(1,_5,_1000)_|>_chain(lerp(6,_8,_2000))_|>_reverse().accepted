@@ -1,0 +1,14 @@
+---
+version: 1.2.7
+title: lerp(1, 5, 1000) |> chain(lerp(6, 8, 2000)) |> reverse()
+file: ./test/lustre/animation_test.gleam
+test_name: chain_then_reverse_test
+---
+Sequence(OneShot(//fn(a) { ... }, duration: 2000), next: OneShot(//fn(a) { ... }, duration: 1000))
+#(Timestamp(0), 8)
+#(Timestamp(500), 7.5)
+#(Timestamp(1000), 7)
+#(Timestamp(1500), 6.5)
+#(Timestamp(2000), 5)
+#(Timestamp(2500), 3)
+#(Timestamp(3000), 1)

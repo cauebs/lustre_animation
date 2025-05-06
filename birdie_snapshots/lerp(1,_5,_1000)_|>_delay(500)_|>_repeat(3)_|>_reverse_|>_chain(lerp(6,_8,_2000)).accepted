@@ -1,0 +1,21 @@
+---
+version: 1.2.7
+title: lerp(1, 5, 1000) |> delay(500) |> repeat(3) |> reverse |> chain(lerp(6, 8, 2000))
+file: ./test/lustre/animation_test.gleam
+test_name: complex_compositions_test
+---
+Sequence(Sequence(Sequence(Sequence(OneShot(//fn(a) { ... }, duration: 1000), next: OneShot(//fn(a) { ... }, duration: 500)), next: Sequence(OneShot(//fn(a) { ... }, duration: 1000), next: OneShot(//fn(a) { ... }, duration: 500))), next: Sequence(OneShot(//fn(a) { ... }, duration: 1000), next: OneShot(//fn(a) { ... }, duration: 500))), next: OneShot(//fn(a) { ... }, duration: 2000))
+#(Timestamp(0), 5)
+#(Timestamp(500), 3)
+#(Timestamp(1000), 1)
+#(Timestamp(1500), 5)
+#(Timestamp(2000), 3)
+#(Timestamp(2500), 1)
+#(Timestamp(3000), 5)
+#(Timestamp(3500), 3)
+#(Timestamp(4000), 1)
+#(Timestamp(4500), 6)
+#(Timestamp(5000), 6.5)
+#(Timestamp(5500), 7)
+#(Timestamp(6000), 7.5)
+#(Timestamp(6500), 8)

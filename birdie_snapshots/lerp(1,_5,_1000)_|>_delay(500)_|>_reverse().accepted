@@ -1,0 +1,11 @@
+---
+version: 1.2.7
+title: lerp(1, 5, 1000) |> delay(500) |> reverse()
+file: ./test/lustre/animation_test.gleam
+test_name: delay_then_reverse_test
+---
+Sequence(OneShot(//fn(a) { ... }, duration: 1000), next: OneShot(//fn(a) { ... }, duration: 500))
+#(Timestamp(0), 5)
+#(Timestamp(500), 3)
+#(Timestamp(1000), 1)
+#(Timestamp(1500), 1)

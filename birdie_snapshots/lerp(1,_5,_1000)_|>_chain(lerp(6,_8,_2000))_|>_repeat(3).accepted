@@ -1,0 +1,26 @@
+---
+version: 1.2.7
+title: lerp(1, 5, 1000) |> chain(lerp(6, 8, 2000)) |> repeat(3)
+file: ./test/lustre/animation_test.gleam
+test_name: chain_then_repeat_test
+---
+Sequence(Sequence(OneShot(//fn(a) { ... }, duration: 1000), next: OneShot(//fn(a) { ... }, duration: 2000)), next: Sequence(Sequence(OneShot(//fn(a) { ... }, duration: 1000), next: OneShot(//fn(a) { ... }, duration: 2000)), next: Sequence(OneShot(//fn(a) { ... }, duration: 1000), next: OneShot(//fn(a) { ... }, duration: 2000))))
+#(Timestamp(0), 1)
+#(Timestamp(500), 3)
+#(Timestamp(1000), 6)
+#(Timestamp(1500), 6.5)
+#(Timestamp(2000), 7)
+#(Timestamp(2500), 7.5)
+#(Timestamp(3000), 1)
+#(Timestamp(3500), 3)
+#(Timestamp(4000), 6)
+#(Timestamp(4500), 6.5)
+#(Timestamp(5000), 7)
+#(Timestamp(5500), 7.5)
+#(Timestamp(6000), 1)
+#(Timestamp(6500), 3)
+#(Timestamp(7000), 6)
+#(Timestamp(7500), 6.5)
+#(Timestamp(8000), 7)
+#(Timestamp(8500), 7.5)
+#(Timestamp(9000), 8)
